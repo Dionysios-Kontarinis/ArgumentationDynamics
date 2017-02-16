@@ -1,0 +1,114 @@
+mod RP_PROCEDURE is
+
+protecting STRING .
+
+************* SORTS AND SUBSORTS
+sorts Argument Sign Atom Conjunct .
+subsorts Atom < Conjunct .
+
+************* CONSTANTS
+ops top btm : -> Atom [ctor] .
+--- * indicates a possibly open atom, # indicates a closed atom.
+ops + - 1 ? 0 * ** # : -> Sign [ctor] . 
+ops issue : -> Argument [ctor] .
+
+************* VARIABLES
+vars X Y : String .
+vars S T : Sign .
+var At : Atom .
+
+************* OPERATORS
+op isAtt_ : String -> Atom [ctor] .
+op isAttRmv_ : String -> Atom [ctor] .
+op isAttAdd_ : String -> Atom [ctor] .
+op ___ : String Sign Sign -> Atom [ctor] .
+op _hits_ : String String -> Atom [ctor] .
+op _hitsArg_ : String Argument -> Atom [ctor] .
+op isNotHit_ : String -> Atom [ctor] .
+op isNotHitArg_ : Argument -> Atom [ctor] .
+op PRO_ : Argument -> Atom [ctor] .
+op CON_ : Argument -> Atom [ctor] .
+op _and_ : Conjunct Conjunct -> Conjunct [ctor assoc comm] .
+
+************* EQUATIONS - SIMPLIFICATION RULES
+eq (X S T) and (X S T) = (X S T) .
+eq (X S **) and (X S *) = (X S *) .
+eq (X S *) and (X S #) = (X S #) .
+eq (X 0 S) and (X 1 T) = btm .
+eq (X 0 S) and (X ? T) = btm .
+eq (X ? S) and (X 1 T) = btm .
+eq (X 0 *) and isNotHit(X) = btm . 
+eq (X ? S) and isNotHit(X) = btm .
+eq PRO(issue) and isNotHitArg(issue) = top .
+eq CON(issue) and isNotHitArg(issue) = btm .
+eq At and btm = btm .
+
+************* REWRITING RULES - EXPANSION RULES 
+----------------------------------------------------------------
+------- Expansion rules for (X 1 *) atoms (rules 1, 2 and 3).
+*** RULE 1: Y is Attack or AttRmv (but is not AttAdd).
+rl [expand_X1*_with_Y0*_a] :
+(X 1 *) and (Y hits X) and (isAtt Y) => (X 1 *) and (Y 0 *) .
+rl [expand_X1*_with_Y0*_b] :
+(X 1 *) and (Y hits X) and (isAttRmv Y) => (X 1 *) and (Y 0 *) .
+
+*** RULE 2: Y is AttRmv.
+rl [expand_X1*_with_Y--0#] :
+(X 1 *) and (Y hits X) and (isAttRmv Y) => (X 1 *) and (Y - -) and (Y 0 #) .
+
+*** RULE 3: Y is AttAdd.
+rl [expand_X1*_with_Y0#] :
+(X 1 *) and (Y hits X) and (isAttAdd Y) => (X 1 *) and (Y 0 #) .
+----------------------------------------------------------------
+------- Expansion rules for (X 0 *) atoms (rules 4 and 5).
+*** RULE 4: Y is Attack or AttRmv, but is not AttAdd.
+rl [expand_X0*_with_Y1*_a] :
+(X 0 *) and (Y hits X) and (isAtt Y) => (X 0 #) and (Y 1 *) .
+rl [expand_X0*_with_Y1*_b] :
+(X 0 *) and (Y hits X) and (isAttRmv Y) => (X 0 #) and (Y 1 *) .
+
+*** RULE 5: Y is AttAdd.
+rl [expand_X0*_with_Y++1*] :
+(X 0 *) and (Y hits X) and (isAttAdd Y) => (X 0 #) and (Y + +) and (Y 1 *) .
+----------------------------------------------------------------
+------- Expansion rules for PRO, CON atoms (rules 13-19).
+*** RULE 13: PRO, and Y is Attack or AttRmv, but is not AttAdd.
+rl [expand_PRO_Y0*] :
+PRO(issue) and (Y hitsArg issue) and (isAtt Y) => PRO(issue) and (Y 0 *) .
+rl [expand_PRO_Y0*] :
+PRO(issue) and (Y hitsArg issue) and (isAttRmv Y) => PRO(issue) and (Y 0 *) .
+
+*** RULE 14: PRO, and Y is AttRmv.
+rl [expand_PRO_Y--0#] :
+PRO(issue) and (Y hitsArg issue) and (isAttRmv Y) => PRO(issue) and (Y - -) and (Y 0 #) .
+
+*** RULE 15: PRO, and Y is AttAdd.
+rl [expand_PRO_Y0#] :
+PRO(issue) and (Y hitsArg issue) and (isAttAdd Y) => PRO(issue) and (Y 0 #) .
+
+*** RULE 16: CON, and Y is Attack or AttRmv, but is not AttAdd.
+rl [expand_CON_Y1*] :
+CON(issue) and (Y hitsArg issue) and (isAtt Y) => (Y 1 *) .
+rl [expand_CON_Y1*] :
+CON(issue) and (Y hitsArg issue) and (isAttRmv Y) => (Y 1 *) .
+
+*** RULE 17: CON, and Y is Attack or AttRmv, but is not AttAdd.
+rl [expand_CON_Y?**] :
+CON(issue) and (Y hitsArg issue) and (isAtt Y) => (Y ? **) .
+rl [expand_CON_Y?**] :
+CON(issue) and (Y hitsArg issue) and (isAttRmv Y) => (Y ? **) .
+
+*** RULE 18: CON, and Y is AttAdd.
+rl [expand_CON_Y++1*] :
+CON(issue) and (Y hitsArg issue) and (isAttAdd Y) => (Y + +) and (Y 1 *) .
+
+*** RULE 19: CON, and Y is AttAdd.
+rl [expand_CON_Y++?**] :
+CON(issue) and (Y hitsArg issue) and (isAttAdd Y) => (Y + +) and (Y ? **) .
+----------------------------------------------------------------
+endm
+
+*** eg.1) search PRO(issue) and (a hitsArg issue) and (b hits a) *** and (isNotHit b) =>! A:Atom .
+*** eg.2) search CON(issue) and (a hitsArg issue) and (b hits a) *** and (isNotHit b) =>! A:Atom .
+*** We can see details of computation: 'show path <#-OF-STATE>'.   
+

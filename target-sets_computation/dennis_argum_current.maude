@@ -1,0 +1,97 @@
+mod RP_PROCEDURE is
+protecting QID .
+******************** SORTS AND SUBSORTS
+sorts Attack Argument Sign Atom Conjunct .
+subsort Atom < Conjunct . subsort Qid < Attack .
+******************** CONSTANTS
+ops top btm : -> Atom [ctor] .
+ops + - 1 ? 0 * ** # : -> Sign [ctor] . 
+ops d : -> Argument [ctor] .
+******************** VARIABLES
+vars X Y : Attack .
+vars S T : Sign .
+var At : Atom .
+******************** OPERATORS
+op ___ : Attack Sign Sign -> Atom [ctor] .
+op PRO_ : Argument -> Atom [ctor] .
+op CON_ : Argument -> Atom [ctor] .
+op _hits_ : Attack Attack -> Atom [ctor] .
+op _hitsArg_ : Attack Argument -> Atom [ctor] .
+op isNotHit_ : Attack -> Atom [ctor] .
+op isNotHitArg_ : Argument -> Atom [ctor] .
+op _and_ : Conjunct Conjunct -> Conjunct [ctor assoc comm] .
+******************** EQUATIONS - SIMPLIFICATION RULES
+eq (X S T) and (X S T) = (X S T) . 		*** Eq. 1
+eq (X S **) and (X S *) = (X S *) .		*** Eq. 2
+eq (X S *) and (X S #) = (X S #) .		*** Eq. 3
+eq (X 0 S) and (X 1 T) = btm .			*** Eq. 4
+eq (X 0 S) and (X ? T) = btm .			*** Eq. 5
+eq (X ? S) and (X 1 T) = btm .			*** Eq. 6
+eq (X 0 *) and isNotHit(X) = btm . 		*** Eq. 7
+eq (X ? S) and isNotHit(X) = btm .		*** Eq. 8
+eq PRO(d) and isNotHitArg(d) = top .		*** Eq. 9
+eq CON(d) and isNotHitArg(d) = btm .		*** Eq. 10
+eq At and btm = btm .					*** Eq. 11		
+******************** REWRITING RULES - EXPANSION RULES
+--------- Expansion rules for (X 1 *) atoms (rules 1, 2 and 3) ---------
+*** RULE 1: The attack Y is on the system.
+crl [expand_X1*_with_Y0*] : (X 1 *) and (Y hits X) =>
+(X 1 *) and (Y 0 *) if not (substr(string(Y),0,1) == "+") .
+*** RULE 2: The attack Y is removable.
+crl [expand_X1*_with_Y-#_Y0#] : (X 1 *) and (Y hits X) =>
+(X 1 *) and (Y - #) and (Y 0 #) if (substr(string(Y),0,1) == "-") .
+*** RULE 3: The attack Y is addable.
+crl [expand_X1*_with_Y0#] : (X 1 *) and (Y hits X) =>
+(X 1 *) and (Y 0 #) if (substr(string(Y),0,1) == "+") .
+--------- Expansion rules for (X 0 *) atoms (rules 4 and 5) ---------
+*** RULE 4: The attack Y is on the system.
+crl [expand_X0*_with_Y1*] : (X 0 *) and (Y hits X) =>
+(X 0 #) and (Y 1 *) if not (substr(string(Y),0,1) == "+") .
+*** RULE 5: The attack Y is addable.
+crl [expand_X0*_with_Y+#_Y1*] : (X 0 *) and (Y hits X) =>
+(X 0 #) and (Y + #) and (Y 1 *) if (substr(string(Y),0,1) == "+") .
+--------- Expansion rules for (X ? **),(X ? *) atoms (rules 6-12) --------- 
+*** RULE 6: Sign **, the attack Y is on the system.
+crl [expand_X?**_with_Y?**] : (X ? **) and (Y hits X) =>
+(X ? *) and (Y ? **) if not (substr(string(Y),0,1) == "+") .
+*** RULE 7: Sign **, the attack Y is addable.
+crl [expand_X?**_with_Y+#_Y?**] : (X ? **) and (Y hits X) =>
+(X ? *) and (Y + #) and (Y ? **) if (substr(string(Y),0,1) == "+") .
+*** RULE 8: Sign *, the attack Y is on the system.
+crl [expand_X?*_with_Y?**] : (X ? *) and (Y hits X) =>
+(X ? *) and (Y ? **) if not (substr(string(Y),0,1) == "+") .
+*** RULE 9: Sign *, the attack Y is on the system.
+crl [expand_X?*_with_Y0*] : (X ? *) and (Y hits X) =>
+(X ? *) and (Y 0 *) if not (substr(string(Y),0,1) == "+") .
+*** RULE 10: Sign *, the attack Y is removable.
+crl [expand_X?*_with_Y-#_Y0#] : (X ? *) and (Y hits X) =>
+(X ? *) and (Y - #) and (Y 0 #) if (substr(string(Y),0,1) == "-") .
+*** RULE 11: Sign *, the attack Y is addable.
+crl [expand_X?*_with_Y0#] : (X ? *) and (Y hits X) =>
+(X ? *) and (Y 0 #) if (substr(string(Y),0,1) == "+") .
+*** RULE 12: Sign *, the attack Y is addable.
+crl [expand_X?*_with_Y?#] : (X ? *) and (Y hits X) =>
+(X ? *) and (Y ? #) if (substr(string(Y),0,1) == "+") .
+--------- Expansion rules for PRO, CON atoms (rules 13-19) --------- 
+*** RULE 13: PRO, and the attack Y is on the system.
+crl [expand_PRO_with_Y0*] : PRO(d) and (Y hitsArg d) =>
+PRO(d) and (Y 0 *) if not (substr(string(Y),0,1) == "+") .
+*** RULE 14: PRO, and the attack Y is removable.
+crl [expand_PRO_with_Y-#_Y0#] : PRO(d) and (Y hitsArg d) =>
+PRO(d) and (Y - #) and (Y 0 #) if (substr(string(Y),0,1) == "-") .
+*** RULE 15: PRO, and the attack Y is addable.
+crl [expand_PRO_with_Y0#] : PRO(d) and (Y hitsArg d) =>
+PRO(d) and (Y 0 #) if (substr(string(Y),0,1) == "+") .
+*** RULE 16: CON, and the attack Y is on the system.
+crl [expand_CON_with_Y1*] : CON(d) and (Y hitsArg d) =>
+(Y 1 *) if not (substr(string(Y),0,1) == "+") .
+*** RULE 17: CON, and the attack Y is addable.
+crl [expand_CON_with_Y+#_Y1*] : CON(d) and (Y hitsArg d) =>
+(Y + #) and (Y 1 *) if (substr(string(Y),0,1) == "+") .
+*** RULE 18: CON, and the attack Y is on the system.
+crl [expand_CON_with_Y?**] : CON(d) and (Y hitsArg d) =>
+(Y ? **) if not (substr(string(Y),0,1) == "+") .
+*** RULE 19: CON, and the attack Y is addable.
+crl [expand_CON_with_Y+#_Y?**] : CON(d) and (Y hitsArg d) =>
+(Y + #) and (Y ? **) if (substr(string(Y),0,1) == "+") .
+endm
